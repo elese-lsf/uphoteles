@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UP Hoteles · Sistema de compras (prototipo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --amber:#E8871E;
+    --amber-deep:#C96B0C;
+    --teal:#2BB694;
+    --coral:#F0625A;
+
+    --l-bg:#FAFAF8;
+    --l-surface:#FFFFFF;
+    --l-ink:#14171A;
+    --l-muted:#767C82;
+    --l-line:#E4E1D8;
+
+    --d-bg:#0F1317;
+    --d-surface:#171C21;
+    --d-surface-2:#1E242B;
+    --d-ink:#EDEFEE;
+    --d-muted:#828A92;
+    --d-line:#262D34;
+
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--l-bg);
+    color:var(--l-ink);
+    font-family:'Inter', sans-serif;
+    font-size:15px;
+    line-height:1.5;
+  }
+  h1,h2,h3,.display{font-family:'Space Grotesk', sans-serif;letter-spacing:-.01em;}
+  .mono{font-family:'JetBrains Mono', monospace;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;font-size:15px;}
+  a{color:inherit;}
+  ::selection{background:var(--amber);color:#0F1317;}
+  @media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important;}}
+
+  /* ---------- Demo switcher ---------- */
+  .demo-bar{
+    position:sticky;top:0;z-index:50;
+    background:var(--d-bg);
+    padding:11px 22px;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    border-bottom:1px solid var(--d-line);
+  }
+  .demo-bar .label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;color:var(--d-muted);white-space:nowrap;
+  }
+  .demo-tabs{display:flex;gap:2px;flex-wrap:wrap;}
+  .demo-tab{
+    background:transparent;border:none;
+    color:var(--d-muted);
+    padding:6px 14px;font-size:13px;
+    border-bottom:2px solid transparent;
+  }
+  .demo-tab.active{color:var(--d-ink);border-bottom-color:var(--amber);}
+  .demo-tab:hover:not(.active){color:var(--d-ink);}
+  .demo-tab:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible{
+    outline:2px solid var(--amber);outline-offset:2px;
+  }
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* ================= VISTA 1 — PEDIDO ================= */
+  #view-pedido{background:var(--l-bg);min-height:calc(100vh - 44px);}
+  .pedido-shell{
+    max-width:1040px;margin:0 auto;
+    display:grid;grid-template-columns:1fr 300px;gap:64px;
+    padding:64px 28px 100px;
+  }
+  .pedido-hero .kicker{
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    color:var(--amber-deep);margin-bottom:14px;
+  }
+  .pedido-hero h1{font-size:40px;font-weight:600;margin:0 0 14px;line-height:1.05;}
+  .pedido-hero .sub{color:var(--l-muted);max-width:44ch;margin:0 0 40px;font-size:15px;}
+
+  .tag-preview{
+    position:relative;
+    background:var(--amber);
+    color:#1a0f00;
+    padding:22px 20px 26px;
+    width:100%;
+    clip-path:polygon(14px 0,100% 0,100% 100%,14px 100%,0 50%);
+    margin-left:14px;
+    transform:rotate(-2.5deg);
+  }
+  .tag-preview .hole{
+    position:absolute;left:26px;top:50%;transform:translateY(-50%);
+    width:9px;height:9px;border-radius:50%;background:var(--l-bg);
+  }
+  .tag-preview .t-label{font-family:'JetBrains Mono',monospace;font-size:11px;opacity:.75;margin-bottom:6px;padding-left:14px;}
+  .tag-preview .t-code{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;padding-left:14px;}
+  .tag-preview .t-desc{font-size:12.5px;margin-top:8px;padding-left:14px;opacity:.85;}
+
+  .field-group{margin-bottom:24px;}
+  .field-group label{display:block;font-size:12.5px;color:var(--l-muted);margin-bottom:7px;}
+  .field-group input[type=text],
+  .field-group input[type=date],
+  .field-group select,
+  .field-group textarea{
+    width:100%;padding:12px 0;
+    border:none;border-bottom:1.5px solid var(--l-line);
+    background:transparent;color:var(--l-ink);border-radius:0;
+  }
+  .field-group input:focus, .field-group select:focus, .field-group textarea:focus{
+    outline:none;border-bottom-color:var(--amber);
+  }
+  .field-group textarea{resize:vertical;min-height:56px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+
+  .urgencia-row{display:flex;gap:0;border-bottom:1.5px solid var(--l-line);}
+  .urgencia-opt{
+    flex:1;background:none;border:none;padding:11px 4px;
+    text-align:center;color:var(--l-muted);font-size:13.5px;
+    border-bottom:2px solid transparent;margin-bottom:-1.5px;
+  }
+  .urgencia-opt.selected{color:var(--l-ink);border-bottom-color:var(--amber);font-weight:500;}
+  .urgencia-opt[data-level="alta"].selected{color:var(--coral);border-bottom-color:var(--coral);}
+
+  .item-adder{display:grid;grid-template-columns:1fr 84px auto;gap:12px;align-items:end;}
+  .btn-add{background:var(--l-ink);color:#fff;border:none;padding:12px 18px;font-size:13.5px;}
+  .btn-add:hover{background:#000;}
+
+  .item-list{margin-top:18px;}
+  .item-row{
+    display:flex;align-items:center;gap:10px;
+    padding:11px 0;border-bottom:1px solid var(--l-line);font-size:14px;
+  }
+  .item-row .qty{font-family:'JetBrains Mono',monospace;color:var(--l-muted);margin-left:auto;}
+  .remove-item{background:none;border:none;color:var(--coral);font-size:12.5px;padding:0;}
+  .empty-hint{color:var(--l-muted);font-size:13px;font-style:italic;padding:16px 0;}
+
+  .submit-bar{margin-top:40px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .btn-primary{
+    background:var(--amber);color:#1a0f00;border:none;
+    padding:15px 28px;font-size:15px;font-weight:600;
+  }
+  .btn-primary:hover{background:var(--amber-deep);color:#fff;}
+  .submit-note{font-size:12.5px;color:var(--l-muted);}
+
+  .confirm-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:24px;padding-top:20px;}
+  .confirm-tag{
+    position:relative;background:var(--amber);color:#1a0f00;
+    padding:28px 26px 32px 34px;
+    clip-path:polygon(20px 0,100% 0,100% 100%,20px 100%,0 50%);
+    transform:rotate(-1.5deg);
+    max-width:340px;
+  }
+  .confirm-tag .hole{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:11px;height:11px;border-radius:50%;background:var(--l-bg);}
+  .confirm-tag .t-code{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:700;}
+  .confirm-tag .t-state{font-family:'JetBrains Mono',monospace;font-size:12px;margin-top:8px;opacity:.75;}
+  .confirm-text h2{font-size:22px;margin:0 0 8px;}
+  .confirm-text p{color:var(--l-muted);margin:0 0 20px;max-width:46ch;}
+  .btn-secondary{background:none;border:1px solid var(--l-line);padding:11px 18px;color:var(--l-ink);font-size:13.5px;}
+  .btn-secondary:hover{border-color:var(--l-ink);}
+
+  /* ================= VISTA 2 — INGRESO ================= */
+  #view-ingreso{
+    background:var(--d-bg);
+    background-image:radial-gradient(circle,rgba(255,255,255,0.05) 1px,transparent 1px);
+    background-size:22px 22px;
+    min-height:calc(100vh - 44px);
+    display:flex;align-items:center;justify-content:center;padding:40px 20px;
+  }
+  .ingreso-card{width:100%;max-width:380px;background:var(--d-surface);border:1px solid var(--d-line);padding:44px 36px;text-align:left;}
+  .ingreso-card .tick{width:26px;height:3px;background:var(--amber);margin-bottom:22px;}
+  .ingreso-card h1{font-size:21px;margin:0 0 6px;color:var(--d-ink);}
+  .ingreso-card p{color:var(--d-muted);font-size:13.5px;margin:0 0 28px;}
+  .btn-google{
+    width:100%;background:var(--d-surface-2);border:1px solid var(--d-line);
+    padding:13px;display:flex;align-items:center;justify-content:center;gap:10px;
+    font-size:14px;font-weight:500;color:var(--d-ink);
+  }
+  .btn-google:hover{border-color:#3a434c;}
+  .g-dot{width:14px;height:14px;border-radius:50%;background:conic-gradient(#4285F4 0 25%,#34A853 25% 50%,#FBBC05 50% 75%,#EA4335 75% 100%);}
+
+  .ingreso-logged{display:none;}
+  .ingreso-logged.show{display:block;}
+  .ingreso-form.hide{display:none;}
+  .account-chip{display:flex;align-items:center;gap:12px;border:1px solid var(--d-line);padding:13px 15px;margin-bottom:22px;}
+  .account-chip .avatar{width:32px;height:32px;background:var(--teal);color:#06231b;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+  .account-chip .who{font-size:13px;color:var(--d-ink);}
+  .account-chip .who b{display:block;font-size:14px;}
+  .account-chip .who span{color:var(--d-muted);}
+  .role-note{font-size:12px;color:var(--d-muted);margin-bottom:22px;}
+  .btn-enter{width:100%;background:var(--amber);color:#1a0f00;border:none;padding:13px;font-size:14px;font-weight:600;}
+  .btn-enter:hover{background:var(--amber-deep);color:#fff;}
+
+  /* ================= VISTA 3 — PANEL DE COMPRAS ================= */
+  #view-panel{display:none;background:var(--d-bg);}
+  #view-panel.active{display:flex;}
+  .panel-shell{display:flex;width:100%;min-height:calc(100vh - 44px);}
+  .rail{width:210px;flex-shrink:0;background:var(--d-surface);border-right:1px solid var(--d-line);padding:22px 0;}
+  .rail-user{display:flex;align-items:center;gap:10px;padding:0 18px 18px;margin-bottom:14px;border-bottom:1px solid var(--d-line);}
+  .rail-user .avatar{width:28px;height:28px;background:var(--teal);color:#06231b;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex-shrink:0;}
+  .rail-user span{font-size:12.5px;color:var(--d-ink);display:block;}
+  .rail-user small{color:var(--d-muted);font-size:11px;}
+  .rail-nav button{
+    display:block;width:100%;background:none;border:none;border-left:2px solid transparent;
+    color:var(--d-muted);padding:10px 18px;font-size:13px;text-align:left;
+  }
+  .rail-nav button:hover{color:var(--d-ink);}
+  .rail-nav button.active{color:var(--d-ink);border-left-color:var(--amber);background:var(--d-surface-2);}
+
+  .panel-main{flex:1;padding:30px 40px 60px;overflow-x:auto;}
+  .panel-sub{display:none;}
+  .panel-sub.active{display:block;}
+  .panel-head{margin-bottom:28px;}
+  .panel-head h2{font-size:22px;margin:0 0 6px;color:var(--d-ink);}
+  .panel-head p{color:var(--d-muted);margin:0;font-size:13.5px;max-width:60ch;}
+
+  /* Circuito de pedidos: linea de pasos */
+  .circuit-steps{display:flex;gap:0;margin-bottom:28px;overflow-x:auto;padding-bottom:6px;}
+  .step{flex:1;min-width:140px;position:relative;padding:0 14px 0 0;}
+  .step .step-top{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .step .num{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--d-bg);
+    width:20px;height:20px;background:var(--amber);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .step .step-name{font-size:12.5px;color:var(--d-ink);}
+  .step .step-line{position:absolute;top:10px;left:20px;right:0;height:1px;background:var(--d-line);}
+  .step:last-child .step-line{display:none;}
+
+  .tag-card{
+    position:relative;background:var(--d-surface-2);border:1px solid var(--d-line);
+    padding:12px 12px 12px 18px;margin-bottom:10px;font-size:12.5px;
+  }
+  .tag-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--amber);}
+  .tag-card.alta::before{background:var(--coral);}
+  .tag-card.baja::before{background:var(--teal);}
+  .tag-card .code{font-family:'JetBrains Mono',monospace;color:var(--d-ink);font-size:12.5px;}
+  .tag-card .hotel{color:var(--d-ink);margin:4px 0 2px;font-weight:500;}
+  .tag-card .meta{color:var(--d-muted);font-size:12px;}
+
+  /* Tablas */
+  .table-wrap{overflow-x:auto;border:1px solid var(--d-line);}
+  table.data{width:100%;border-collapse:collapse;font-size:13px;min-width:640px;color:var(--d-ink);}
+  table.data th{
+    text-align:left;font-weight:500;color:var(--d-muted);font-size:11.5px;
+    padding:11px 14px;background:var(--d-surface);border-bottom:1px solid var(--d-line);white-space:nowrap;
+    font-family:'JetBrains Mono',monospace;
+  }
+  table.data td{padding:11px 14px;border-bottom:1px solid var(--d-line);vertical-align:top;}
+  table.data tr:last-child td{border-bottom:none;}
+  table.data tr:hover td{background:var(--d-surface-2);}
+  .cheapest{color:var(--teal);font-weight:700;}
+  .equiv-list{color:var(--d-muted);font-size:12px;}
+
+  /* Proveedores: lista, no cards con sombra */
+  .provider-list{border:1px solid var(--d-line);}
+  .provider-row{
+    display:flex;align-items:center;gap:16px;padding:15px 18px;
+    border-bottom:1px solid var(--d-line);flex-wrap:wrap;
+  }
+  .provider-row:last-child{border-bottom:none;}
+  .provider-row .p-info{flex:1;min-width:160px;}
+  .provider-row h4{margin:0 0 2px;font-size:14.5px;font-weight:500;color:var(--d-ink);}
+  .provider-row .cat{color:var(--d-muted);font-size:12px;}
+  .provider-actions{display:flex;gap:8px;}
+  .btn-mini{
+    border:1px solid var(--d-line);background:none;padding:8px 14px;font-size:12px;
+    color:var(--d-ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn-mini.wa:hover{border-color:var(--teal);color:var(--teal);}
+  .btn-mini.mail:hover{border-color:var(--amber);color:var(--amber);}
+
+  /* Permisos */
+  .role-select{padding:6px 8px;border:1px solid var(--d-line);background:var(--d-surface-2);color:var(--d-ink);font-size:12.5px;}
+  .toggle{width:32px;height:17px;border-radius:100px;background:var(--d-line);position:relative;border:none;}
+  .toggle.on{background:var(--teal);}
+  .toggle::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#0F1317;transition:left .15s ease;}
+  .toggle.on::after{left:17px;background:#06231b;}
+  .invite-bar{display:flex;justify-content:flex-end;margin-bottom:14px;}
+  .btn-invite{background:var(--amber);color:#1a0f00;border:none;padding:9px 16px;font-size:12.5px;font-weight:600;}
+
+  /* Quién pide */
+  .requester-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--d-line);}
+  .requester-row:last-child{border-bottom:none;}
+  .requester-row .avatar{
+    width:32px;height:32px;background:var(--d-surface-2);border:1px solid var(--d-line);
+    display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:var(--d-ink);flex-shrink:0;
+  }
+  .requester-row .who b{display:block;font-size:13.5px;color:var(--d-ink);}
+  .requester-row .who span{color:var(--d-muted);font-size:12px;}
+  .requester-row .stat{margin-left:auto;text-align:right;font-size:11.5px;color:var(--d-muted);}
+  .requester-row .stat b{display:block;font-size:18px;color:var(--d-ink);font-family:'JetBrains Mono',monospace;font-weight:700;}
+
+  /* ---- Aprobación ---- */
+  .approval-card{border:1px solid var(--d-line);background:var(--d-surface);margin-bottom:14px;}
+  .approval-top{display:flex;align-items:center;gap:16px;padding:16px 18px;flex-wrap:wrap;}
+  .approval-top .code{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--d-ink);}
+  .approval-top .hotel{font-size:14px;color:var(--d-ink);font-weight:500;}
+  .approval-top .items{color:var(--d-muted);font-size:12.5px;}
+  .approval-top .amount{font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--d-ink);margin-left:auto;}
+  .who-approves{
+    font-size:10.5px;font-family:'JetBrains Mono',monospace;
+    padding:3px 8px;border:1px solid var(--d-line);color:var(--d-muted);
+  }
+  .who-approves.dir{color:var(--amber);border-color:var(--amber);}
+
+  .mode-switch{display:flex;align-items:center;gap:10px;padding:0 18px 16px;border-bottom:1px solid var(--d-line);}
+  .mode-switch span{font-size:12px;color:var(--d-muted);}
+  .mode-btns{display:flex;border:1px solid var(--d-line);}
+  .mode-btn{background:none;border:none;color:var(--d-muted);padding:6px 12px;font-size:12px;}
+  .mode-btn.selected{background:var(--d-surface-2);color:var(--d-ink);}
+
+  .send-panel{padding:16px 18px;}
+  .send-auto-note{font-size:12.5px;color:var(--d-muted);}
+  .send-auto-note b{color:var(--teal);font-family:'JetBrains Mono',monospace;}
+  .send-manual-row{display:flex;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid var(--d-line);flex-wrap:wrap;font-size:12.5px;}
+  .send-manual-row:last-of-type{border-bottom:none;}
+  .send-manual-row .prod{min-width:150px;color:var(--d-ink);}
+  .supplier-opt{display:flex;align-items:center;gap:5px;color:var(--d-muted);}
+  .supplier-opt input{accent-color:var(--amber);}
+  .supplier-opt.best{color:var(--teal);}
+
+  .approval-actions{display:flex;gap:10px;padding:14px 18px;}
+  .btn-approve{background:var(--teal);color:#06231b;border:none;padding:9px 16px;font-size:12.5px;font-weight:600;}
+  .btn-approve:hover{background:#25a184;}
+  .btn-reject{background:none;border:1px solid var(--d-line);color:var(--coral);padding:9px 16px;font-size:12.5px;}
+  .btn-reject:hover{border-color:var(--coral);}
+  .approval-card.processed{opacity:.4;pointer-events:none;}
+
+  /* ---- Consolidación ---- */
+  .consolida-group{border:1px solid var(--d-line);background:var(--d-surface);margin-bottom:18px;}
+  .consolida-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--d-line);flex-wrap:wrap;}
+  .consolida-head h4{margin:0;font-size:14.5px;color:var(--d-ink);font-weight:500;}
+  .consolida-head .tier-note{font-size:12px;color:var(--d-muted);font-family:'JetBrains Mono',monospace;}
+  .consolida-row{display:flex;align-items:center;gap:14px;padding:11px 18px;border-bottom:1px solid var(--d-line);font-size:12.5px;}
+  .consolida-row input[type=checkbox]{accent-color:var(--amber);width:15px;height:15px;}
+  .consolida-row .hotel{min-width:140px;color:var(--d-ink);}
+  .consolida-row .qty{font-family:'JetBrains Mono',monospace;color:var(--d-muted);margin-left:auto;}
+  .consolida-foot{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;flex-wrap:wrap;gap:12px;}
+  .consolida-total{font-size:12.5px;color:var(--d-muted);}
+  .consolida-total b{color:var(--d-ink);font-family:'JetBrains Mono',monospace;font-size:15px;}
+  .consolida-total .save{color:var(--teal);}
+  .btn-consolidate{background:var(--amber);color:#1a0f00;border:none;padding:10px 18px;font-size:12.5px;font-weight:600;}
+  .btn-consolidate:hover{background:var(--amber-deep);color:#fff;}
+
+  /* ---- Datos de proveedor ---- */
+  .provider-data-note{margin:22px 0 10px;font-size:12.5px;color:var(--d-muted);}
+
+  /* ================= VISTA 4 — GESTIÓN ================= */
+  #view-gestion{background:var(--d-bg);min-height:calc(100vh - 44px);}
+  .gestion-wrap{max-width:1080px;margin:0 auto;padding:44px 32px 80px;}
+  .gestion-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:30px;}
+  .gestion-head h1{font-size:26px;margin:0 0 4px;color:var(--d-ink);}
+  .gestion-head p{color:var(--d-muted);margin:0;font-size:13.5px;}
+  .btn-send{background:var(--amber);color:#1a0f00;border:none;padding:12px 20px;font-size:13.5px;font-weight:600;}
+  .btn-send:hover{background:var(--amber-deep);color:#fff;}
+
+  .kpi-strip{display:flex;border-top:1px solid var(--d-line);border-bottom:1px solid var(--d-line);margin-bottom:36px;}
+  .kpi{flex:1;padding:18px 20px;border-right:1px solid var(--d-line);}
+  .kpi:last-child{border-right:none;}
+  .kpi .label{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--d-muted);margin-bottom:10px;}
+  .kpi .value{font-size:27px;font-weight:600;color:var(--d-ink);}
+  .kpi .delta{font-size:11.5px;margin-top:6px;color:var(--teal);}
+  .kpi .delta.neg{color:var(--coral);}
+
+  .chart-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:1px;background:var(--d-line);border:1px solid var(--d-line);margin-bottom:1px;}
+  .chart-card{background:var(--d-surface);padding:24px;}
+  .chart-card h3{font-size:14px;margin:0 0 4px;font-weight:500;color:var(--d-ink);}
+  .chart-card .sub{font-size:11.5px;color:var(--d-muted);margin:0 0 18px;font-family:'JetBrains Mono',monospace;}
+  .chart-full{grid-column:1 / -1;background:var(--d-surface);padding:24px;}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--amber);color:#1a0f00;padding:12px 20px;font-size:13.5px;font-weight:500;
+    opacity:0;pointer-events:none;transition:opacity .2s ease, transform .2s ease;z-index:200;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:860px){
+    .pedido-shell{grid-template-columns:1fr;gap:32px;padding:36px 20px 70px;}
+    .panel-shell{flex-direction:column;}
+    .rail{width:100%;display:flex;align-items:center;gap:2px;padding:12px;overflow-x:auto;border-right:none;border-bottom:1px solid var(--d-line);}
+    .rail-user{border-bottom:none;border-right:1px solid var(--d-line);padding:0 14px 0 4px;margin:0;}
+    .rail-nav{display:flex;}
+    .rail-nav button{white-space:nowrap;border-left:none;border-bottom:2px solid transparent;}
+    .rail-nav button.active{border-left:none;border-bottom-color:var(--amber);}
+    .two-col{grid-template-columns:1fr;}
+    .item-adder{grid-template-columns:1fr;}
+    .kpi-strip{flex-wrap:wrap;}
+    .kpi{flex:1 1 50%;border-bottom:1px solid var(--d-line);}
+    .chart-grid{grid-template-columns:1fr;}
+    .panel-main{padding:22px 18px 50px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <span class="label">// prototipo — sistema de compras UP Hoteles</span>
+  <div class="demo-tabs">
+    <button class="demo-tab active" data-view="pedido">Pedido</button>
+    <button class="demo-tab" data-view="ingreso">Ingreso</button>
+    <button class="demo-tab" data-view="panel">Panel de compras</button>
+    <button class="demo-tab" data-view="gestion">Gestión</button>
+  </div>
+</div>
+
+<!-- ===================== VISTA 1: PEDIDO (sin login) ===================== -->
+<div class="view active" id="view-pedido">
+  <div class="pedido-shell">
+    <div>
+      <div id="pedido-form-block">
+        <div class="pedido-hero">
+          <div class="kicker mono">UP HOTELES / PEDIDOS</div>
+          <h1>Hacer un pedido</h1>
+          <p class="sub">Elegí el hotel, agregá los productos que necesitás y enviá. No hace falta crear una cuenta ni recordar contraseñas.</p>
+        </div>
+
+        <div class="field-group">
+          <label for="f-hotel">Hotel</label>
+          <select id="f-hotel">
+            <option>América Plaza (AME)</option>
+            <option>Gran Andes (GHA)</option>
+            <option>Viamonte Suites (VIA)</option>
+            <option>Del Bosque (DEL)</option>
+            <option>Costa Azul (COS)</option>
+            <option>Belgrano Central (BEL)</option>
+          </select>
+        </div>
+
+        <div class="two-col">
+          <div class="field-group">
+            <label for="f-solicitante">Tu nombre</label>
+            <input type="text" id="f-solicitante" placeholder="Ej: Marcela Ríos">
+          </div>
+          <div class="field-group">
+            <label for="f-fecha">Fecha necesaria</label>
+            <input type="date" id="f-fecha">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Urgencia</label>
+          <div class="urgencia-row" id="urgencia-row">
+            <button type="button" class="urgencia-opt" data-level="baja">Baja</button>
+            <button type="button" class="urgencia-opt selected" data-level="media">Media</button>
+            <button type="button" class="urgencia-opt" data-level="alta">Alta</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Productos</label>
+          <div class="item-adder">
+            <input type="text" id="f-producto" list="catalogo" placeholder="Buscar producto, ej: papel higiénico">
+            <input type="text" id="f-cantidad" placeholder="Cantidad">
+            <button type="button" class="btn-add" onclick="addItem()">Agregar</button>
+          </div>
+          <datalist id="catalogo">
+            <option value="Amenities kit (jabón + shampoo) · cód. 0988">
+            <option value="Pisos plastificados x5L · cód. 0451">
+            <option value="Papel higiénico institucional · cód. 0212">
+            <option value="Detergente concentrado · cód. 0333">
+            <option value="Bolsas de residuo 100L · cód. 0560">
+          </datalist>
+
+          <div class="item-list" id="item-tbody"></div>
+          <div class="empty-hint" id="empty-hint">Todavía no agregaste productos.</div>
+        </div>
+
+        <div class="field-group">
+          <label for="f-comentario">Comentario o link de referencia (opcional)</label>
+          <textarea id="f-comentario" placeholder="Ej: link de la foto del producto, o aclaración para el proveedor"></textarea>
+        </div>
+
+        <div class="submit-bar">
+          <button class="btn-primary" onclick="submitPedido()">Enviar pedido</button>
+          <span class="submit-note">Te avisamos por WhatsApp o mail cada vez que cambie de estado.</span>
+        </div>
+      </div>
+
+      <div id="pedido-confirm-block" style="display:none;">
+        <div class="confirm-wrap">
+          <div class="confirm-tag">
+            <div class="hole"></div>
+            <div class="t-code mono" id="confirm-code">AME-1032</div>
+            <div class="t-state">estado: recibido</div>
+          </div>
+          <div class="confirm-text">
+            <h2>Pedido recibido</h2>
+            <p>Compras lo va a revisar y cotizar. No hace falta que llames a preguntar — este código va a viajar con el pedido hasta que llegue al hotel.</p>
+            <button class="btn-secondary" onclick="resetPedido()">Hacer otro pedido</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="tag-preview">
+        <div class="hole"></div>
+        <div class="t-label">así queda etiquetado tu pedido</div>
+        <div class="t-code">VIA-1029</div>
+        <div class="t-desc">Viamonte Suites · amenities kit · 40 un.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== VISTA 2: INGRESO ===================== -->
+<div class="view" id="view-ingreso">
+  <div class="ingreso-card">
+    <div class="ingreso-form">
+      <div class="tick"></div>
+      <h1>Panel de compras</h1>
+      <p>Acceso para el equipo de compras y dirección.</p>
+      <button class="btn-google" onclick="doLogin()">
+        <span class="g-dot"></span> Continuar con Google
+      </button>
+    </div>
+    <div class="ingreso-logged">
+      <div class="account-chip">
+        <div class="avatar">G</div>
+        <div class="who"><b>Gonzalo Ferrer</b><span>gonzalo@uphoteles.com.ar</span></div>
+      </div>
+      <p class="role-note">Rol: Compras · Podés invitar más cuentas y asignar permisos desde el panel.</p>
+      <button class="btn-enter" onclick="goTo('panel')">Entrar al panel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== VISTA 3: PANEL DE COMPRAS ===================== -->
+<div class="view" id="view-panel">
+  <div class="panel-shell">
+    <div class="rail">
+      <div class="rail-user">
+        <div class="avatar">G</div>
+        <div><span>Gonzalo Ferrer</span><small>Compras</small></div>
+      </div>
+      <div class="rail-nav">
+        <button class="active" data-sub="pedidos">Pedidos</button>
+        <button data-sub="aprobacion">Aprobación</button>
+        <button data-sub="consolidacion">Consolidación</button>
+        <button data-sub="maestro">Maestro de productos</button>
+        <button data-sub="precios">Precios</button>
+        <button data-sub="proveedores">Proveedores</button>
+        <button data-sub="permisos">Permisos</button>
+        <button data-sub="quienpide">Quién pide</button>
+      </div>
+    </div>
+
+    <div class="panel-main">
+
+      <!-- Pedidos: circuito -->
+      <div class="panel-sub active" id="sub-pedidos">
+        <div class="panel-head">
+          <h2>Circuito de pedidos</h2>
+          <p>El código viaja del requerimiento a la orden de compra. El estado se actualiza solo.</p>
+        </div>
+        <div class="circuit-steps">
+          <div class="step"><div class="step-line"></div><div class="step-top"><span class="num">1</span><span class="step-name">Recibido</span></div></div>
+          <div class="step"><div class="step-line"></div><div class="step-top"><span class="num">2</span><span class="step-name">Cotizando</span></div></div>
+          <div class="step"><div class="step-line"></div><div class="step-top"><span class="num">3</span><span class="step-name">Aprobado</span></div></div>
+          <div class="step"><div class="step-line"></div><div class="step-top"><span class="num">4</span><span class="step-name">Orden emitida</span></div></div>
+          <div class="step"><div class="step-line"></div><div class="step-top"><span class="num">5</span><span class="step-name">En camino</span></div></div>
+          <div class="step"><div class="step-top"><span class="num">6</span><span class="step-name">Entregado</span></div></div>
+        </div>
+
+        <div class="two-col" style="grid-template-columns:repeat(3,1fr);gap:16px;">
+          <div>
+            <div class="tag-card alta"><div class="code">VIA-1029</div><div class="hotel">Viamonte Suites</div><div class="meta">Amenities kit · 40 un.</div></div>
+            <div class="tag-card"><div class="code">DEL-1030</div><div class="hotel">Del Bosque</div><div class="meta">Papel higiénico · 200 un.</div></div>
+          </div>
+          <div>
+            <div class="tag-card baja"><div class="code">AME-1025</div><div class="hotel">América Plaza</div><div class="meta">Pisos plastificados · 30 L</div></div>
+            <div class="tag-card"><div class="code">GHA-1019</div><div class="hotel">Gran Andes</div><div class="meta">Detergente concentrado · 60 L</div></div>
+          </div>
+          <div>
+            <div class="tag-card baja"><div class="code">COS-1012</div><div class="hotel">Costa Azul</div><div class="meta">Bolsas 100L · 500 un.</div></div>
+            <div class="tag-card alta"><div class="code">BEL-1004</div><div class="hotel">Belgrano Central</div><div class="meta">Amenities kit · 80 un.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aprobación -->
+      <div class="panel-sub" id="sub-aprobacion">
+        <div class="panel-head">
+          <h2>Aprobación</h2>
+          <p>Pedidos ya cotizados, listos para aprobar. Los de menor monto los aprueba Compras; por encima del umbral, pasan a Dirección.</p>
+        </div>
+
+        <div class="approval-card" id="appr-1">
+          <div class="approval-top">
+            <span class="code">DEL-1030</span>
+            <span class="hotel">Del Bosque</span>
+            <span class="items">Papel higiénico institucional · 200 un.</span>
+            <span class="who-approves">aprueba: compras</span>
+            <span class="amount">$70.000</span>
+          </div>
+          <div class="mode-switch">
+            <span>Envío del pedido:</span>
+            <div class="mode-btns">
+              <button class="mode-btn selected" onclick="setSendMode(this,'auto')">Automático</button>
+              <button class="mode-btn" onclick="setSendMode(this,'manual')">Elegir proveedor</button>
+            </div>
+          </div>
+          <div class="send-panel">
+            <div class="send-auto" id="auto-1">
+              <p class="send-auto-note">El sistema elige el proveedor con el precio vigente más bajo: <b>Sur · $8.350</b>.</p>
+            </div>
+            <div class="send-manual" id="manual-1" style="display:none;">
+              <div class="send-manual-row">
+                <span class="prod">Papel higiénico institucional</span>
+                <label class="supplier-opt best"><input type="radio" name="sup-1" checked> Sur — $8.350</label>
+                <label class="supplier-opt"><input type="radio" name="sup-1"> Lustrol — $8.900</label>
+              </div>
+            </div>
+          </div>
+          <div class="approval-actions">
+            <button class="btn-approve" onclick="approveOrder('appr-1')">Aprobar y enviar</button>
+            <button class="btn-reject" onclick="approveOrder('appr-1')">Rechazar</button>
+          </div>
+        </div>
+
+        <div class="approval-card" id="appr-2">
+          <div class="approval-top">
+            <span class="code">VIA-1029</span>
+            <span class="hotel">Viamonte Suites</span>
+            <span class="items">Amenities kit · 40 un. + Pisos plastificados · 20 L</span>
+            <span class="who-approves dir">aprueba: dirección</span>
+            <span class="amount">$611.000</span>
+          </div>
+          <div class="mode-switch">
+            <span>Envío del pedido:</span>
+            <div class="mode-btns">
+              <button class="mode-btn" onclick="setSendMode(this,'auto')">Automático</button>
+              <button class="mode-btn selected" onclick="setSendMode(this,'manual')">Elegir proveedor</button>
+            </div>
+          </div>
+          <div class="send-panel">
+            <div class="send-auto" id="auto-2" style="display:none;">
+              <p class="send-auto-note">El sistema elegiría <b>Le Marque · $612</b> y <b>Lustrol · $4.180</b> por línea.</p>
+            </div>
+            <div class="send-manual" id="manual-2">
+              <div class="send-manual-row">
+                <span class="prod">Amenities kit</span>
+                <label class="supplier-opt best"><input type="radio" name="sup-2a" checked> Le Marque — $612</label>
+                <label class="supplier-opt"><input type="radio" name="sup-2a"> Sur — $690</label>
+              </div>
+              <div class="send-manual-row">
+                <span class="prod">Pisos plastificados</span>
+                <label class="supplier-opt best"><input type="radio" name="sup-2b" checked> Lustrol — $4.180</label>
+                <label class="supplier-opt"><input type="radio" name="sup-2b"> Sur — $4.410</label>
+              </div>
+            </div>
+          </div>
+          <div class="approval-actions">
+            <button class="btn-approve" onclick="approveOrder('appr-2')">Aprobar y enviar</button>
+            <button class="btn-reject" onclick="approveOrder('appr-2')">Rechazar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Consolidación -->
+      <div class="panel-sub" id="sub-consolidacion">
+        <div class="panel-head">
+          <h2>Consolidación de pedidos</h2>
+          <p>Varios hoteles piden lo mismo por separado. Agruparlos en una sola orden mejora el precio por volumen.</p>
+        </div>
+
+        <div class="consolida-group">
+          <div class="consolida-head">
+            <h4>Papel higiénico institucional · cód. 0212</h4>
+            <span class="tier-note">a partir de 800 un., Ronsil baja a $7.900</span>
+          </div>
+          <div class="consolida-row"><input type="checkbox" checked onchange="updateConsolida()"><span class="hotel">Del Bosque · DEL-1030</span><span class="qty">200 un.</span></div>
+          <div class="consolida-row"><input type="checkbox" checked onchange="updateConsolida()"><span class="hotel">América Plaza · AME-0995</span><span class="qty">180 un.</span></div>
+          <div class="consolida-row"><input type="checkbox" checked onchange="updateConsolida()"><span class="hotel">Gran Andes · GHA-0987</span><span class="qty">220 un.</span></div>
+          <div class="consolida-row"><input type="checkbox" onchange="updateConsolida()"><span class="hotel">Costa Azul · COS-0971</span><span class="qty">150 un.</span></div>
+          <div class="consolida-foot">
+            <div class="consolida-total">total seleccionado: <b id="consolida-qty">600 un.</b> · <span class="save" id="consolida-save">precio actual, sin mejora de tramo</span></div>
+            <button class="btn-consolidate" onclick="doConsolidate()">Consolidar en una orden</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Maestro de productos -->
+      <div class="panel-sub" id="sub-maestro">
+        <div class="panel-head">
+          <h2>Maestro de productos</h2>
+          <p>Un código único por producto, con la tabla de cómo lo llama cada proveedor.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>código</th><th>nombre estándar</th><th>unidad</th><th>cómo lo llama cada proveedor</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">0451</td><td>Pisos plastificados</td><td>Bidón 5L</td><td class="equiv-list">Lustrol: "CIF PISOS PLASTIFICADOS" · Numasa: "FLASH PISOS PLASTIFICADOS X 5 LT"</td></tr>
+              <tr><td class="mono">0988</td><td>Amenities kit (jabón + shampoo)</td><td>Unidad</td><td class="equiv-list">Le Marque: "KIT AMENITIES HOTEL 30ML" · Sur: "AMENITIES x2 JABÓN/SHAMPOO"</td></tr>
+              <tr><td class="mono">0212</td><td>Papel higiénico institucional</td><td>Fardo x40</td><td class="equiv-list">Ronsil: "HIG. INSTITUCIONAL FD40" · Tolima: "PAPEL HIG. HOTELERO"</td></tr>
+              <tr><td class="mono">0333</td><td>Detergente concentrado</td><td>Bidón 20L</td><td class="equiv-list">L'Higiene: "DETERGENTE CONC. 20L" · Impek: "DETER. INDUSTRIAL 20 LTS"</td></tr>
+              <tr><td class="mono">0560</td><td>Bolsas de residuo 100L</td><td>Rollo x25</td><td class="equiv-list">Numasa: "BOLSA RESIDUO 100LT NEGRA" · Sur: "BOLSAS 100 LTS X25"</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Precios -->
+      <div class="panel-sub" id="sub-precios">
+        <div class="panel-head">
+          <h2>Comparativa de precios</h2>
+          <p>Precios con fecha de vigencia. El más bajo se marca solo.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>producto</th><th>lustrol</th><th>numasa</th><th>le marque</th><th>sur</th><th>vigencia</th></tr></thead>
+            <tbody>
+              <tr><td>Pisos plastificados</td><td class="cheapest mono">$4.180</td><td class="mono">$4.590</td><td>—</td><td class="mono">$4.410</td><td class="mono">hasta 15/09</td></tr>
+              <tr><td>Amenities kit</td><td>—</td><td>—</td><td class="cheapest mono">$612</td><td class="mono">$690</td><td class="mono">hasta 20/09</td></tr>
+              <tr><td>Papel higiénico</td><td class="mono">$8.900</td><td>—</td><td>—</td><td class="cheapest mono">$8.350</td><td class="mono">hasta 12/09</td></tr>
+              <tr><td>Detergente concentrado</td><td class="mono">$6.020</td><td class="cheapest mono">$5.740</td><td>—</td><td class="mono">$6.150</td><td class="mono">hasta 30/09</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Proveedores -->
+      <div class="panel-sub" id="sub-proveedores">
+        <div class="panel-head">
+          <h2>Proveedores</h2>
+          <p>Datos de cada lista de precios y contacto directo, una vez que el pedido está aprobado.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>proveedor</th><th>última lista recibida</th><th>productos con precio vigente</th><th>cobertura del maestro</th><th>canal preferido</th></tr></thead>
+            <tbody>
+              <tr><td>Lustrol</td><td class="mono">05/09</td><td class="mono">14</td><td class="mono">62%</td><td>WhatsApp</td></tr>
+              <tr><td>Numasa</td><td class="mono">02/09</td><td class="mono">9</td><td class="mono">40%</td><td>Mail</td></tr>
+              <tr><td>Le Marque</td><td class="mono">07/09</td><td class="mono">6</td><td class="mono">28%</td><td>WhatsApp</td></tr>
+              <tr><td>Sur</td><td class="mono">08/09</td><td class="mono">21</td><td class="mono">80%</td><td>WhatsApp</td></tr>
+              <tr><td>Ronsil</td><td class="mono">30/08</td><td class="mono">11</td><td class="mono">48%</td><td>Mail</td></tr>
+              <tr><td>Impek</td><td class="mono">18/08</td><td class="mono">5</td><td class="mono" style="color:var(--coral);">33%</td><td>WhatsApp</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="provider-data-note">La cobertura baja o una lista vieja son la alerta para pedir precios actualizados antes de comparar.</p>
+        <div class="provider-list">
+          <div class="provider-row">
+            <div class="p-info"><h4>Lustrol</h4><div class="cat">Limpieza de pisos</div></div>
+            <div class="provider-actions">
+              <a class="btn-mini wa" href="https://wa.me/5491155550148?text=Hola%2C%20necesitamos%20cotizar%20pisos%20plastificados" target="_blank" rel="noopener">WhatsApp</a>
+              <a class="btn-mini mail" href="mailto:ventas@lustrol.com.ar?subject=Pedido%20UP%20Hoteles">Mail</a>
+            </div>
+          </div>
+          <div class="provider-row">
+            <div class="p-info"><h4>Numasa</h4><div class="cat">Limpieza general</div></div>
+            <div class="provider-actions">
+              <a class="btn-mini wa" href="https://wa.me/5491155550149" target="_blank" rel="noopener">WhatsApp</a>
+              <a class="btn-mini mail" href="mailto:pedidos@numasa.com.ar">Mail</a>
+            </div>
+          </div>
+          <div class="provider-row">
+            <div class="p-info"><h4>Le Marque</h4><div class="cat">Amenities</div></div>
+            <div class="provider-actions">
+              <a class="btn-mini wa" href="https://wa.me/5491155550150" target="_blank" rel="noopener">WhatsApp</a>
+              <a class="btn-mini mail" href="mailto:hola@lemarque.com.ar">Mail</a>
+            </div>
+          </div>
+          <div class="provider-row">
+            <div class="p-info"><h4>Sur</h4><div class="cat">Descartables</div></div>
+            <div class="provider-actions">
+              <a class="btn-mini wa" href="https://wa.me/5491155550151" target="_blank" rel="noopener">WhatsApp</a>
+              <a class="btn-mini mail" href="mailto:comercial@sur.com.ar">Mail</a>
+            </div>
+          </div>
+          <div class="provider-row">
+            <div class="p-info"><h4>Ronsil</h4><div class="cat">Papelería institucional</div></div>
+            <div class="provider-actions">
+              <a class="btn-mini wa" href="https://wa.me/5491155550152" target="_blank" rel="noopener">WhatsApp</a>
+              <a class="btn-mini mail" href="mailto:ventas@ronsil.com.ar">Mail</a>
+            </div>
+          </div>
+          <div class="provider-row">
+            <div class="p-info"><h4>Impek</h4><div class="cat">Químicos industriales</div></div>
+            <div class="provider-actions">
+              <a class="btn-mini wa" href="https://wa.me/5491155550153" target="_blank" rel="noopener">WhatsApp</a>
+              <a class="btn-mini mail" href="mailto:info@impek.com.ar">Mail</a>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:20px;"><button class="btn-secondary" style="border-color:var(--d-line);color:var(--d-ink);" onclick="showToast('Buscando proveedores nuevos en la zona…')">Buscar nuevo proveedor</button></p>
+      </div>
+
+      <!-- Permisos -->
+      <div class="panel-sub" id="sub-permisos">
+        <div class="panel-head">
+          <h2>Permisos</h2>
+          <p>Quién entra al panel y qué puede ver o aprobar, ligado a su cuenta de Google.</p>
+        </div>
+        <div class="invite-bar"><button class="btn-invite" onclick="showToast('Invitación enviada')">Invitar cuenta</button></div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>nombre</th><th>cuenta</th><th>rol</th><th>activo</th></tr></thead>
+            <tbody>
+              <tr><td>Gonzalo Ferrer</td><td class="mono">gonzalo@uphoteles.com.ar</td><td><select class="role-select"><option>Compras</option><option>Dirección</option><option>Solo lectura</option></select></td><td><button class="toggle on"></button></td></tr>
+              <tr><td>Marina Otero</td><td class="mono">marina.otero@uphoteles.com.ar</td><td><select class="role-select"><option selected>Dirección</option><option>Compras</option><option>Solo lectura</option></select></td><td><button class="toggle on"></button></td></tr>
+              <tr><td>Facundo Leiva</td><td class="mono">facundo.leiva@uphoteles.com.ar</td><td><select class="role-select"><option>Compras</option><option>Dirección</option><option selected>Solo lectura</option></select></td><td><button class="toggle on"></button></td></tr>
+              <tr><td>Silvia Camps</td><td class="mono">silvia.camps@uphoteles.com.ar</td><td><select class="role-select"><option>Compras</option><option>Dirección</option><option selected>Solo lectura</option></select></td><td><button class="toggle"></button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quién pide -->
+      <div class="panel-sub" id="sub-quienpide">
+        <div class="panel-head">
+          <h2>Quién pide</h2>
+          <p>Las personas que cargan pedidos en cada hotel, sin necesidad de que tengan cuenta.</p>
+        </div>
+        <div class="table-wrap">
+          <div class="requester-row"><div class="avatar">MR</div><div class="who"><b>Marcela Ríos</b><span>América Plaza · gobernanta</span></div><div class="stat"><b>14</b>pedidos este mes</div></div>
+          <div class="requester-row"><div class="avatar">JP</div><div class="who"><b>Julián Paz</b><span>Gran Andes · recepción</span></div><div class="stat"><b>09</b>pedidos este mes</div></div>
+          <div class="requester-row"><div class="avatar">CV</div><div class="who"><b>Carla Vega</b><span>Viamonte Suites · gobernanta</span></div><div class="stat"><b>11</b>pedidos este mes</div></div>
+          <div class="requester-row"><div class="avatar">DIR</div><div class="who"><b>Dirección</b><span>pedidos directos por WhatsApp, sin pasar por el formulario</span></div><div class="stat"><b>07</b>pedidos este mes</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===================== VISTA 4: GESTIÓN ===================== -->
+<div class="view" id="view-gestion">
+  <div class="gestion-wrap">
+    <div class="gestion-head">
+      <div>
+        <h1>Gestión</h1>
+        <p>El resumen que hoy Gonzalo arma a mano cada trimestre, generado solo.</p>
+      </div>
+      <button class="btn-send" onclick="showToast('Resumen enviado a dirección ✓')">Enviar resumen a dirección</button>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi"><div class="label mono">GASTO 2026</div><div class="value">$84,2M</div><div class="delta">de $120M anuales</div></div>
+      <div class="kpi"><div class="label mono">AHORRO CAPTURADO</div><div class="value">3,1%</div><div class="delta">≈ $310.000 / mes</div></div>
+      <div class="kpi"><div class="label mono">URGENCIA ALTA</div><div class="value">38%</div><div class="delta neg">antes: 61%</div></div>
+      <div class="kpi"><div class="label mono">CUMPLIMIENTO</div><div class="value">82%</div><div class="delta">promedio 8 proveedores</div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Gasto por hotel</h3>
+        <p class="sub">últimos 30 días · millones ARS</p>
+        <svg viewBox="0 0 420 200" width="100%" height="200">
+          <g font-family="JetBrains Mono" font-size="10" fill="#828A92">
+            <rect x="10" y="30" width="40" height="150" fill="#E8871E"></rect>
+            <rect x="65" y="60" width="40" height="120" fill="#E8871E"></rect>
+            <rect x="120" y="80" width="40" height="100" fill="#E8871E"></rect>
+            <rect x="175" y="100" width="40" height="80" fill="#E8871E"></rect>
+            <rect x="230" y="115" width="40" height="65" fill="#E8871E"></rect>
+            <rect x="285" y="130" width="40" height="50" fill="#E8871E"></rect>
+            <rect x="340" y="145" width="40" height="35" fill="#E8871E"></rect>
+            <text x="30" y="195" text-anchor="middle">AME</text>
+            <text x="85" y="195" text-anchor="middle">GHA</text>
+            <text x="140" y="195" text-anchor="middle">VIA</text>
+            <text x="195" y="195" text-anchor="middle">DEL</text>
+            <text x="250" y="195" text-anchor="middle">COS</text>
+            <text x="305" y="195" text-anchor="middle">BEL</text>
+            <text x="360" y="195" text-anchor="middle">otros</text>
+          </g>
+        </svg>
+      </div>
+      <div class="chart-card">
+        <h3>Cumplimiento por proveedor</h3>
+        <p class="sub">% de entregas en fecha</p>
+        <svg viewBox="0 0 300 200" width="100%" height="200">
+          <g font-family="JetBrains Mono" font-size="10" fill="#EDEFEE">
+            <text x="0" y="20">lustrol</text><rect x="70" y="9" width="180" height="10" fill="#2BB694"></rect><text x="255" y="20">90%</text>
+            <text x="0" y="50">numasa</text><rect x="70" y="39" width="152" height="10" fill="#2BB694"></rect><text x="255" y="50">76%</text>
+            <text x="0" y="80">le marque</text><rect x="70" y="69" width="168" height="10" fill="#2BB694"></rect><text x="255" y="80">84%</text>
+            <text x="0" y="110">sur</text><rect x="70" y="99" width="120" height="10" fill="#F0625A"></rect><text x="255" y="110">60%</text>
+            <text x="0" y="140">ronsil</text><rect x="70" y="129" width="176" height="10" fill="#2BB694"></rect><text x="255" y="140">88%</text>
+            <text x="0" y="170">impek</text><rect x="70" y="159" width="140" height="10" fill="#E8871E"></rect><text x="255" y="170">70%</text>
+          </g>
+        </svg>
+      </div>
+      <div class="chart-card chart-full">
+        <h3>Evolución de precio — Pisos plastificados (cód. 0451)</h3>
+        <p class="sub">precio promedio ponderado por mes · ARS</p>
+        <svg viewBox="0 0 900 160" width="100%" height="160">
+          <polyline points="20,110 140,100 260,90 380,70 500,60 620,45 740,50 860,40" fill="none" stroke="#E8871E" stroke-width="2.5"></polyline>
+          <g fill="#E8871E"><circle cx="20" cy="110" r="3"></circle><circle cx="140" cy="100" r="3"></circle><circle cx="260" cy="90" r="3"></circle><circle cx="380" cy="70" r="3"></circle><circle cx="500" cy="60" r="3"></circle><circle cx="620" cy="45" r="3"></circle><circle cx="740" cy="50" r="3"></circle><circle cx="860" cy="40" r="3"></circle></g>
+          <g font-family="JetBrains Mono" font-size="10" fill="#828A92">
+            <text x="20" y="130">feb</text><text x="140" y="130">mar</text><text x="260" y="130">abr</text><text x="380" y="130">may</text><text x="500" y="130">jun</text><text x="620" y="130">jul</text><text x="740" y="130">ago</text><text x="860" y="130">sep</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function goTo(view){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+view).classList.add('active');
+    document.querySelectorAll('.demo-tab').forEach(t=>t.classList.toggle('active', t.dataset.view===view));
+  }
+  document.querySelectorAll('.demo-tab').forEach(t=>{
+    t.addEventListener('click', ()=>goTo(t.dataset.view));
+  });
+
+  document.querySelectorAll('.rail-nav button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.rail-nav button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.panel-sub').forEach(s=>s.classList.remove('active'));
+      document.getElementById('sub-'+btn.dataset.sub).classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.urgencia-opt').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      document.querySelectorAll('.urgencia-opt').forEach(o=>o.classList.remove('selected'));
+      opt.classList.add('selected');
+    });
+  });
+
+  let items = [];
+  function addItem(){
+    const prod = document.getElementById('f-producto');
+    const qty = document.getElementById('f-cantidad');
+    if(!prod.value.trim()) return;
+    items.push({name: prod.value.trim(), qty: qty.value.trim() || '1'});
+    prod.value=''; qty.value='';
+    renderItems();
+  }
+  function removeItem(i){ items.splice(i,1); renderItems(); }
+  function renderItems(){
+    const list = document.getElementById('item-tbody');
+    const hint = document.getElementById('empty-hint');
+    list.innerHTML = '';
+    hint.style.display = items.length ? 'none' : 'block';
+    items.forEach((it, i)=>{
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `<span>${it.name}</span><span class="qty mono">${it.qty}</span><button class="remove-item" onclick="removeItem(${i})">Quitar</button>`;
+      list.appendChild(row);
+    });
+  }
+
+  function submitPedido(){
+    const hotelSelect = document.getElementById('f-hotel');
+    const prefix = hotelSelect.value.match(/\(([^)]+)\)/);
+    const code = (prefix ? prefix[1] : 'UPH') + '-' + (1000 + Math.floor(Math.random()*90));
+    document.getElementById('confirm-code').textContent = code;
+    document.getElementById('pedido-form-block').style.display = 'none';
+    document.getElementById('pedido-confirm-block').style.display = 'block';
+  }
+  function resetPedido(){
+    items = []; renderItems();
+    document.getElementById('f-solicitante').value='';
+    document.getElementById('f-comentario').value='';
+    document.getElementById('pedido-form-block').style.display = 'block';
+    document.getElementById('pedido-confirm-block').style.display = 'none';
+  }
+  renderItems();
+
+  function setSendMode(btn, mode){
+    const card = btn.closest('.approval-card');
+    card.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const idSuffix = card.id.split('-')[1];
+    const auto = document.getElementById('auto-'+idSuffix);
+    const manual = document.getElementById('manual-'+idSuffix);
+    if(mode==='auto'){ auto.style.display='block'; manual.style.display='none'; }
+    else{ auto.style.display='none'; manual.style.display='block'; }
+  }
+
+  function approveOrder(cardId){
+    const card = document.getElementById(cardId);
+    card.classList.add('processed');
+    showToast('Pedido enviado al proveedor ✓');
+  }
+
+  function updateConsolida(){
+    const rows = document.querySelectorAll('#sub-consolidacion .consolida-row');
+    let total = 0;
+    rows.forEach(r=>{
+      const checked = r.querySelector('input[type=checkbox]').checked;
+      if(checked){
+        const qtyText = r.querySelector('.qty').textContent;
+        total += parseInt(qtyText, 10) || 0;
+      }
+    });
+    document.getElementById('consolida-qty').textContent = total + ' un.';
+    const saveEl = document.getElementById('consolida-save');
+    if(total >= 800){
+      saveEl.textContent = 'entra en el tramo de $7.900 · ahorro estimado $' + ((8350-7900)*total).toLocaleString('es-AR');
+      saveEl.style.color = 'var(--teal)';
+    } else {
+      saveEl.textContent = 'faltan ' + (800-total) + ' un. para el tramo de $7.900';
+      saveEl.style.color = 'var(--d-muted)';
+    }
+  }
+  updateConsolida();
+
+  function doConsolidate(){
+    showToast('Orden consolidada creada: CONS-0007');
+  }
+
+  function doLogin(){
+    document.querySelector('.ingreso-form').classList.add('hide');
+    document.querySelector('.ingreso-logged').classList.add('show');
+  }
+
+  document.querySelectorAll('.toggle').forEach(t=>{
+    t.addEventListener('click', ()=>t.classList.toggle('on'));
+  });
+
+  let toastTimer;
+  function showToast(msg){
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>el.classList.remove('show'), 2600);
+  }
+</script>
+
+</body>
+</html>
